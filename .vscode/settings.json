@@ -1,5 +1,6 @@
 {
-    "files.associations": {
-        "global.h": "c"
-    }
+  "files.associations": {
+    "global.h": "c"
+  },
+  "C_Cpp_Runner.msvcBatchPath": ""
 }
