@@ -9,20 +9,20 @@
 // Different state of ATM machine
 /// @warning This has to reflect the order of the stateFunctionRow_t array
 typedef enum {
-  FSM_STATE_IDLE,
-  FSM_STATE_UP,
-  FSM_STATE_DOWN,
-  FSM_STATE_ERROR
+  FSM_DIRECTION_IDLE,
+  FSM_DIRECTION_UP,
+  FSM_DIRECTION_DOWN,
+  FSM_DIRECTION_ERROR
 } fsm_direction_t;
 
 typedef enum {
-  FSM_STATE_1,
-  FSM_STATE_1_5,
-  FSM_STATE_2,
-  FSM_STATE_2_5,
-  FSM_STATE_3,
-  FSM_STATE_3_5,
-  FSM_STATE_4,
+  FSM_FLOOR_1,
+  FSM_FLOOR_1_5,
+  FSM_FLOOR_2,
+  FSM_FLOOR_2_5,
+  FSM_FLOOR_3,
+  FSM_FLOOR_3_5,
+  FSM_FLOOR_4,
 } fsm_floor_t;
 
 typedef struct fsm_state_s {
