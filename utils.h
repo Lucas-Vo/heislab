@@ -11,7 +11,8 @@
 #define M_FLOOR_BIT_MASK  0x07
 #define M_DIRECTION_BIT_MASK  0x38
 
-int sort_query (uint8_t *query);
+uint8_t sort_query (uint8_t *query, fsm_state_t *elevator_state);
+uint8_t prioritize_inputs (uint8_t *query, fsm_state_t *elevator_state);
 
 
 

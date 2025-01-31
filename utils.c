@@ -6,9 +6,8 @@
 @brief Sorts the query array based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
-uint8_t sort_query (uint8_t *query,) {
+uint8_t sort_query (uint8_t *query, fsm_state_t *elevator_state) {
     int i, j;
-
     uint8_t temp;
     for (j = 0; j < M_QUERY_LEN; j++) {
         for (i = 0; i < M_QUERY_LEN-j; i++) {
@@ -33,7 +32,7 @@ uint8_t sort_query (uint8_t *query,) {
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
-uint8_t prioritize_inputs (uint8_t *query, fsm_state_s &elevator_state){
+uint8_t prioritize_inputs (uint8_t *query, fsm_state_t *elevator_state){
 
     return 0;
 }
