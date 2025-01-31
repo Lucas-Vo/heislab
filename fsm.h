@@ -25,21 +25,21 @@ typedef enum {
   FSM_FLOOR_4,
 } fsm_floor_t;
 
-typedef struct fsm_state_s {
-  fsm_direction_t direction;
-  fsm_floor_t floor;
-} fsm_state_t;
-
 // Different type events
 typedef enum {
-  FSM_EVENT_NONE,
   FSM_EVENT_BOOT,
+  FSM_EVENT_NONE,
   FSM_EVENT_UP,
   FSM_EVENT_DOWN,
   FSM_EVENT_IDLE,
   FSM_EVENT_HALT,
 } fsm_event_t;
 
+typedef struct fsm_state_s {
+  fsm_direction_t direction;
+  fsm_floor_t floor;
+  fsm_event_t event;
+} fsm_state_t;
 
 
 typedef struct stateFunctionRow_s {
@@ -49,30 +49,26 @@ typedef struct stateFunctionRow_s {
   void (*exit_function)(void);
 } stateFunctionRow_t;
 
-typedef struct transitions_s {
-  fsm_state_t currState;
-  fsm_event_t event;
-  fsm_state_t nextState;
-} transitions_t;
 
 
 // Enter functions
+void BootEnter();
 void IdleEnter();
 void UpEnter();
 void DownEnter();
-void ErrorEnter();
+void HaltEnter();
 
 // Update functions
 void IdleUpdate();
 void UpUpdate();
 void DownUpdate();
-void ErrorUpdate();
+void HaltUpdate();
 
 // Exit functions
 void IdleExit();
 void UpExit();
 void DownExit();
-void ErrorExit();
+void HaltExit();
 
 
 
