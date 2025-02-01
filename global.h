@@ -11,6 +11,9 @@
 #define M_PRIORITY_BIT_MASK  0x40
 #define M_ACTIVE_BIT_MASK 0x80
 
+#define M_BUTTON_COUNT 4
+#define M_FLOOR_COUNT 4
+
 typedef uint8_t query_t; // 1 bit for active, 1 bit for priority, 3 bits for floor, 3 bits for direction
 
 extern bool g_floor_panel[6]; /// [4 down, 3 down, 2 down, 3 up, 2 up, 1 up]

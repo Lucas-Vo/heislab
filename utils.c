@@ -66,6 +66,56 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 }
 
 /*
+@brief Populates the query with a new query element if it not already exists
+@param query: pointer to the query array
+@param elevator_state: pointer to the elevator state struct
+@param floor: the floor of the new query
+@param button: the button of the new query
+*/
+uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button){
+    query_t new_query_element=0;
+    uint8_t direction = 0;
+    for (uint8_t i = 0; i < M_QUERY_LEN; i++)
+    {
+        if (query[i]&M_ACTIVE_BIT_MASK == 0)
+        {
+            new_query_element = 0;
+            new_query_element |= M_ACTIVE_BIT_MASK;
+            new_query_element |= floor;
+            new_query_element |= direction<<3;
+            query[i] = new_query_element;
+            return 0;
+        }
+    }
+
+}
+
+/*
+@brief Throws the first element of the query array, and moves the others one step down
+@param query: pointer to the query array
+*/
+uint8_t iterate_query (query_t *query)
+{
+    for (uint8_t i = 0; i < M_QUERY_LEN-1; i++)
+    {
+        query[i] = query[i+1];
+    }
+    return 0;
+}
+
+/*
+@brief Clears the query array
+@param query: pointer to the query array
+*/
+uint8_t clear_query ( query_t *query){
+    for (uint8_t i = 0; i < M_QUERY_LEN; i++)
+    {
+        query[i] = 0;
+    }
+    return 0;
+}
+
+/*
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
@@ -100,4 +150,48 @@ uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
         }
     }
     return 0;
+}
+
+/*
+@brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
+@param query: pointer to the query array
+*/
+uint8_t update_elevator_floor(fsm_state_t *p_elevator_state){
+    int sensedfloor = elevio_floorSensor();
+    if (elevio_floorSensor() != -1)
+    {
+        p_elevator_state->floor = elevio_floorSensor()<<1;
+    }
+    else{ // means elevator is stuck between two worlds
+        int prev_floor = p_elevator_state->floor;
+        if (p_elevator_state->direction == FSM_DIRECTION_UP)
+        {
+            p_elevator_state->floor = prev_floor + 1;
+        }
+        else if (p_elevator_state->direction == FSM_DIRECTION_DOWN)
+        {
+            p_elevator_state->floor = prev_floor - 1;
+        }
+    }
+    return 0;
+}
+
+
+uint8_t populate_floor_panel (int *arr_floor_panel)
+{
+    for (int i=0; i<3; i++)
+    {
+        arr_floor_panel[i] = elevio_callButton(i, BUTTON_HALL_DOWN);
+        arr_floor_panel[i+3] = elevio_callButton(i, BUTTON_HALL_UP);
+    }
+}
+
+uint8_t poll_elevator_panel(int *arr_elevator_panel)
+{
+    for(int f = 0; f < M_FLOOR_COUNT; f++){
+            for(int b = 0; b < M_BUTTON_COUNT; b++){
+                int btnPressed = elevio_callButton(f, b);
+                elevio_buttonLamp(f, b, btnPressed);
+            }
+        }
 }
