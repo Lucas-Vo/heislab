@@ -15,7 +15,7 @@ uint8_t poll (){
 */
 uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
-    if (p_elevator_state->direction == FSM_DIRECTION_IDLE)
+    if (p_elevator_state->event == FSM_EVENT_IDLE)
     {
         //checks if the elevator is idle
         return 0;
@@ -39,7 +39,7 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
             else 
             {
                 //If both queries are prioritized, it checks the floor and movement direction of current elevator
-                if (p_elevator_state->direction ==  FSM_DIRECTION_UP)
+                if (p_elevator_state->event ==  FSM_EVENT_UP)
                 {
                     if (arr_query[j]&M_FLOOR_BIT_MASK > arr_query[j+1]&M_FLOOR_BIT_MASK)
                     {
@@ -49,7 +49,7 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
                         arr_query[j+1] = temp;
                     }
                 }
-                else if (p_elevator_state->direction ==  FSM_DIRECTION_DOWN)
+                else if (p_elevator_state->event ==  FSM_EVENT_DOWN)
                 {
                     if (arr_query[j]&M_FLOOR_BIT_MASK < arr_query[j+1]&M_FLOOR_BIT_MASK)
                     {
@@ -77,6 +77,7 @@ uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t fl
     uint8_t direction = 0;
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
+        if (query[i])
         if (query[i]&M_ACTIVE_BIT_MASK == 0)
         {
             new_query_element = 0;
@@ -121,7 +122,7 @@ uint8_t clear_query ( query_t *query){
 */
 uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
-    if (p_elevator_state->direction == FSM_DIRECTION_IDLE)
+    if (p_elevator_state->event == FSM_EVENT_IDLE)
     {
             //checks if the elevator is idle
             arr_query[0] |= M_PRIORITY_BIT_MASK;
@@ -134,15 +135,15 @@ uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
             //checks if the query is active
             continue;
         }
-        else if (p_elevator_state->direction == arr_query[i]&M_DIRECTION_BIT_MASK)
+        else if (p_elevator_state->event == arr_query[i]&M_DIRECTION_BIT_MASK)
         {
             //checks if the moving direction of the query is the same as the elevator
-            if (p_elevator_state->direction == FSM_DIRECTION_UP && arr_query[i] & M_FLOOR_BIT_MASK >= p_elevator_state->floor)
+            if (p_elevator_state->event == FSM_EVENT_UP && arr_query[i] & M_FLOOR_BIT_MASK >= p_elevator_state->floor)
             { // if moving up and the floor is higher than the current floor
                 arr_query[i] |= M_PRIORITY_BIT_MASK;
                 continue;
             }
-            else if (p_elevator_state->direction == FSM_DIRECTION_DOWN && arr_query[i] & M_FLOOR_BIT_MASK <= p_elevator_state->floor)
+            else if (p_elevator_state->event == FSM_EVENT_DOWN && arr_query[i] & M_FLOOR_BIT_MASK <= p_elevator_state->floor)
             { // if moving up and the floor is higher than the current floor
                 arr_query[i] |= M_PRIORITY_BIT_MASK;
                 continue;
@@ -164,11 +165,11 @@ uint8_t update_elevator_floor(fsm_state_t *p_elevator_state){
     }
     else{ // means elevator is stuck between two worlds
         int prev_floor = p_elevator_state->floor;
-        if (p_elevator_state->direction == FSM_DIRECTION_UP)
+        if (p_elevator_state->event == FSM_EVENT_UP)
         {
             p_elevator_state->floor = prev_floor + 1;
         }
-        else if (p_elevator_state->direction == FSM_DIRECTION_DOWN)
+        else if (p_elevator_state->event == FSM_EVENT_DOWN)
         {
             p_elevator_state->floor = prev_floor - 1;
         }
