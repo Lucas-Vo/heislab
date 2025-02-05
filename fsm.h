@@ -8,12 +8,7 @@
 
 // Different state of ATM machine
 /// @warning This has to reflect the order of the stateFunctionRow_t array
-typedef enum {
-  FSM_DIRECTION_IDLE,
-  FSM_DIRECTION_UP,
-  FSM_DIRECTION_DOWN,
-  FSM_DIRECTION_ERROR
-} fsm_direction_t;
+
 
 typedef enum {
   FSM_FLOOR_1,
@@ -27,18 +22,18 @@ typedef enum {
 
 // Different type events
 typedef enum {
-  FSM_EVENT_BOOT,
-  FSM_EVENT_NONE,
   FSM_EVENT_UP,
   FSM_EVENT_DOWN,
   FSM_EVENT_IDLE,
   FSM_EVENT_HALT,
+  FSM_EVENT_ATFLOOR,
 } fsm_event_t;
 
+
 typedef struct fsm_state_s {
-  fsm_direction_t direction;
   fsm_floor_t floor;
   fsm_event_t event;
+  bool transition;
 } fsm_state_t;
 
 
@@ -52,23 +47,26 @@ typedef struct stateFunctionRow_s {
 
 
 // Enter functions
-void BootEnter();
-void IdleEnter();
-void UpEnter();
-void DownEnter();
-void HaltEnter();
+void BootEnter(fsm_state_t *p_state);
+void IdleEnter(fsm_state_t *p_state);
+void AtFloorEnter(fsm_state_t *p_state);
+void UpEnter(fsm_state_t *p_state);
+void DownEnter(fsm_state_t *p_state);
+void HaltEnter(fsm_state_t *p_state);
 
 // Update functions
-void IdleUpdate();
-void UpUpdate();
-void DownUpdate();
-void HaltUpdate();
+void IdleUpdate(fsm_state_t *p_state);
+void AtFloorUpdate(fsm_state_t *p_state);
+void UpUpdate(fsm_state_t *p_state);
+void DownUpdate(fsm_state_t *p_state);
+void HaltUpdate(fsm_state_t *p_state);
 
 // Exit functions
-void IdleExit();
-void UpExit();
-void DownExit();
-void HaltExit();
+void IdleExit(fsm_state_t *p_state);
+void AtFloorExit(fsm_state_t *p_state);
+void UpExit(fsm_state_t *p_state);
+void DownExit(fsm_state_t *p_state);
+void HaltExit(fsm_state_t *p_state);
 
 
 

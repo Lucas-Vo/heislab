@@ -1,8 +1,11 @@
 #include "fsm.h"
+#include "elevio.h"
+#include <time.h>
 
 /// @warning    This has to stay in sync with the fsm_state_t enum!
 static stateFunctionRow_t stateFunction[] = {
   {"Idle",      &IdleEnter,      &IdleUpdate,    &IdleExit   },
+  {"AtFloor",   &AtFloorEnter,   &AtFloorUpdate, &AtFloorExit},
   {"Up",        &UpEnter,        &UpUpdate,      &UpExit     },
   {"Down",      &DownEnter,      &DownUpdate,    &DownExit   },
   {"Halt",     &HaltEnter,      &HaltUpdate,    &HaltExit    },
@@ -11,29 +14,26 @@ static stateFunctionRow_t stateFunction[] = {
 
 void exit_functions_fsm(fsm_state_t *p_state)
 {
+    if (p_state->transition = false) return;
     switch (p_state->event)
     {
-    case FSM_EVENT_BOOT:
-        // do nothing
-        break;
-    case FSM_EVENT_NONE:
-        // do nothing
-        break;
     case FSM_EVENT_UP:
-        p_state->direction = FSM_DIRECTION_UP;
         p_state->floor += 1; // + 0.5
-        UpEnter();
+        UpExit(p_state);
         break;
     case FSM_EVENT_DOWN:
-        DownEnter();
+        p_state->floor -= 1; // - 0.5
+        DownExit(p_state);
         break;
     case FSM_EVENT_IDLE:
-        IdleEnter();
+        IdleExit(p_state);
         break;
     case FSM_EVENT_HALT:
-        HaltEnter();
+        HaltExit(p_state);
         break;
-    
+    case FSM_EVENT_ATFLOOR:
+        AtFloorExit(p_state);
+        break;
     default:
         break;
     }
@@ -43,30 +43,21 @@ void enter_functions_fsm(fsm_state_t *p_state)
 {
     switch (p_state->event)
     {
-    case FSM_EVENT_BOOT:
-        BootEnter();
-        p_state->event = FSM_EVENT_NONE;
-        break;
-    case FSM_EVENT_NONE:
-        p_state->event = FSM_EVENT_NONE;
-        break;
     case FSM_EVENT_UP:
-        UpEnter();
-        p_state->event = FSM_EVENT_NONE;
+        UpEnter(p_state);
         break;
     case FSM_EVENT_DOWN:
-        DownEnter();
-        p_state->event = FSM_EVENT_NONE;
+        DownEnter(p_state);
         break;
     case FSM_EVENT_IDLE:
-        IdleEnter();
-        p_state->event = FSM_EVENT_NONE;
+        IdleEnter(p_state);
         break;
     case FSM_EVENT_HALT:
-        HaltEnter();
-        p_state->event = FSM_EVENT_NONE;
+        HaltEnter(p_state);
         break;
-    
+    case FSM_EVENT_ATFLOOR:
+        AtFloorEnter(p_state);
+        break;
     default:
         break;
     }
@@ -74,28 +65,44 @@ void enter_functions_fsm(fsm_state_t *p_state)
 
 void update_functions_fsm(fsm_state_t *p_state)
 {
-    switch (p_state->direction)
+    switch (p_state->event)
     {
-    case FSM_DIRECTION_IDLE:
-        IdleUpdate();
+    case FSM_EVENT_IDLE:
+        IdleUpdate(p_state);
         break;
     
-    case FSM_DIRECTION_UP:
-        UpUpdate();
+    case FSM_EVENT_UP:
+        UpUpdate(p_state);
         break;
     
-    case FSM_DIRECTION_DOWN:
-        DownUpdate();
+    case FSM_EVENT_DOWN:
+        DownUpdate(p_state);
+        break;
+    case FSM_EVENT_HALT:
+        HaltUpdate(p_state);
         break;
     
-    case FSM_DIRECTION_ERROR:
-        HaltUpdate();
+    case FSM_EVENT_ATFLOOR:
+        AtFloorUpdate(p_state);
         break;
-    
     default:
         break;
     }
+}
 
+void init_fsm(fsm_state_t *p_state)
+{
+    // goes down to first floor
+    while(1){
+        nanosleep(&(struct timespec){0, 100*1000*1000}, NULL);
+        elevio_motorDirection(DIRN_DOWN);
+        if (elevio_floorSensor() == 1){
+            elevio_motorDirection(DIRN_STOP);
+            break;
+        }
+    }
+    p_state->event = FSM_EVENT_IDLE;
+    p_state->floor = FSM_FLOOR_1;
 }
 
 void run_fsm(fsm_state_t *p_state)
@@ -109,28 +116,28 @@ void run_fsm(fsm_state_t *p_state)
 
 
 // Enter functions
-void BootEnter()
+void BootEnter(fsm_state_t *p_state)
 {
 
 }
 
 // Update functions
-void IdleUpdate()
+void IdleUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
 }
-void UpUpdate()
+void UpUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
 }
-void DownUpdate()
+void DownUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
 }
-void HaltUpdate()
+void HaltUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
