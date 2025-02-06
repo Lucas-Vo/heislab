@@ -74,21 +74,25 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 */
 uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button){
     query_t new_query_element=0;
-    uint8_t direction = 0;
+    
+    uint8_t direction = 0; // FIX THIS DIRECTION SO IT CAN DO THIS WELL THANK YOU
+
+    new_query_element |= M_ACTIVE_BIT_MASK;
+    new_query_element |= floor;
+    new_query_element |= direction<<3;
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
-        if (query[i])
-        if (query[i]&M_ACTIVE_BIT_MASK == 0)
+        if (query[i]==new_query_element)
         {
-            new_query_element = 0;
-            new_query_element |= M_ACTIVE_BIT_MASK;
-            new_query_element |= floor;
-            new_query_element |= direction<<3;
+            return 0;
+        }
+        else if (query[i]&M_ACTIVE_BIT_MASK == 0)
+        {
             query[i] = new_query_element;
             return 0;
         }
     }
-
+    return 0;
 }
 
 /*
@@ -185,14 +189,16 @@ uint8_t populate_floor_panel (int *arr_floor_panel)
         arr_floor_panel[i] = elevio_callButton(i, BUTTON_HALL_DOWN);
         arr_floor_panel[i+3] = elevio_callButton(i, BUTTON_HALL_UP);
     }
+    return 0;
 }
 
 uint8_t poll_elevator_panel(int *arr_elevator_panel)
 {
     for(int f = 0; f < M_FLOOR_COUNT; f++){
-            for(int b = 0; b < M_BUTTON_COUNT; b++){
-                int btnPressed = elevio_callButton(f, b);
-                elevio_buttonLamp(f, b, btnPressed);
-            }
+        for(int b = 0; b < M_BUTTON_COUNT; b++){
+            int btnPressed = elevio_callButton(f, b);
+            elevio_buttonLamp(f, b, btnPressed);
         }
+    }
+    return 0;
 }
