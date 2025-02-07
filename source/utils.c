@@ -4,7 +4,8 @@
 @brief yuuhh
 @param 
 */
-uint8_t poll (){
+uint8_t poll ()
+{
     return 0;
 }
 
@@ -161,13 +162,15 @@ uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
-uint8_t update_elevator_floor(fsm_state_t *p_elevator_state){
+uint8_t update_elevator_floor(fsm_state_t *p_elevator_state)
+{
     int sensedfloor = elevio_floorSensor();
     if (elevio_floorSensor() != -1)
     {
         p_elevator_state->floor = elevio_floorSensor()<<1;
     }
-    else{ // means elevator is stuck between two worlds
+    else
+    { // means elevator is stuck between two worlds
         int prev_floor = p_elevator_state->floor;
         if (p_elevator_state->event == FSM_EVENT_UP)
         {
@@ -192,15 +195,12 @@ uint8_t poll_floor_panel (bool *arr_floor_panel)
     return 0;
 }
 
-uint8_t poll_elevator_panel(bool *arr_elevator_panel)
+uint8_t poll_cab_panel(bool *arr_elevator_panel)
 {
-    int i = 0;
-    for(int f = 0; f < M_FLOOR_COUNT; f++){
-        for(int b = 0; b < M_BUTTON_COUNT; b++){
-            bool btnPressed = (bool) elevio_callButton(f, b);
-            arr_elevator_panel[i] = btnPressed;
-            i++;
-        }
+    for(int i = 0; i < M_FLOOR_COUNT; i++)
+    {
+        bool btnPressed = (bool) elevio_callButton(i, BUTTON_CAB);
+        arr_elevator_panel[i] = btnPressed;
     }
     return 0;
 }
