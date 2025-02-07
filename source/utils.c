@@ -195,17 +195,12 @@ uint8_t poll_floor_panel (bool *arr_floor_panel)
     return 0;
 }
 
-uint8_t poll_elevator_panel(bool *arr_elevator_panel)
+uint8_t poll_cab_panel(bool *arr_elevator_panel)
 {
-    int i = 0;
-    for(int f = 0; f < M_FLOOR_COUNT; f++)
+    for(int i = 0; i < M_FLOOR_COUNT; i++)
     {
-        for(int b = 0; b < M_BUTTON_COUNT; b++)
-        {
-            bool btnPressed = (bool) elevio_callButton(f, b);
-            arr_elevator_panel[i] = btnPressed;
-            i++;
-        }
+        bool btnPressed = (bool) elevio_callButton(i, BUTTON_CAB);
+        arr_elevator_panel[i] = btnPressed;
     }
     return 0;
 }
