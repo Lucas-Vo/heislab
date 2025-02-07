@@ -2,6 +2,7 @@
 
 #include "global.h"
 #include "fsm.h"
+#include "driver/elevio.h"
 
 bool g_floor_panel[6]; /// [4 down, 3 down, 2 down, 3 up, 2 up, 1 up]
 bool g_elevator_panel[4]; /// [1, 2, 3, 4]
