@@ -1,13 +1,5 @@
 #include "utils.h"
 
-/*
-@brief yuuhh
-@param 
-*/
-uint8_t poll ()
-{
-    return 0;
-}
 
 
 /*
@@ -16,6 +8,7 @@ uint8_t poll ()
 */
 uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
+    prioritize_inputs (arr_query, p_elevator_state);
     if (p_elevator_state->event == FSM_EVENT_IDLE)
     {
         //checks if the elevator is idle
@@ -75,12 +68,23 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 */
 uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button){
     query_t new_query_element=0;
-    
-    uint8_t direction = 0; // FIX THIS DIRECTION SO IT CAN DO THIS WELL THANK YOU
+    uint8_t direction;
+
+    if ( (floor > elevator_state->floor) && ((int)button == 2) ) 
+    { // for cab panels
+        direction = 1;
+    }
+    else if ( (floor<elevator_state->floor) && ((int)button == 2) )
+    {
+        direction = 2;
+    }
+    else{ //for floor panel
+        direction = (int) button +1; 
+    }
 
     new_query_element |= M_ACTIVE_BIT_MASK;
-    new_query_element |= floor;
-    new_query_element |= direction<<3;
+    new_query_element |= floor<<1;
+    new_query_element |= (direction<<3);
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
         if (query[i]==new_query_element)
@@ -158,39 +162,14 @@ uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
     return 0;
 }
 
-/*
-@brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
-@param query: pointer to the query array
-*/
-uint8_t update_elevator_floor(fsm_state_t *p_elevator_state)
-{
-    int sensedfloor = elevio_floorSensor();
-    if (elevio_floorSensor() != -1)
-    {
-        p_elevator_state->floor = elevio_floorSensor()<<1;
-    }
-    else
-    { // means elevator is stuck between two worlds
-        int prev_floor = p_elevator_state->floor;
-        if (p_elevator_state->event == FSM_EVENT_UP)
-        {
-            p_elevator_state->floor = prev_floor + 1;
-        }
-        else if (p_elevator_state->event == FSM_EVENT_DOWN)
-        {
-            p_elevator_state->floor = prev_floor - 1;
-        }
-    }
-    return 0;
-}
 
 /* ATTENZIONE */
 uint8_t poll_floor_panel (bool *arr_floor_panel)
 {
     for (int i=0; i<3; i++)
     {
-        arr_floor_panel[i] = (bool) elevio_callButton(i, BUTTON_HALL_DOWN);
-        arr_floor_panel[i+3] = (bool) elevio_callButton(i, BUTTON_HALL_UP);
+        arr_floor_panel[i] = (bool) elevio_callButton(i, BUTTON_HALL_UP);
+        arr_floor_panel[i+3] = (bool) elevio_callButton(i, BUTTON_HALL_DOWN);
     }
     return 0;
 }
@@ -199,8 +178,34 @@ uint8_t poll_cab_panel(bool *arr_elevator_panel)
 {
     for(int i = 0; i < M_FLOOR_COUNT; i++)
     {
-        bool btnPressed = (bool) elevio_callButton(i, BUTTON_CAB);
-        arr_elevator_panel[i] = btnPressed;
+        arr_elevator_panel[i] = (bool) elevio_callButton(i, BUTTON_CAB);;
+    }
+    return 0;
+}
+
+/*
+@brief polls the entire panel for inputs
+@param 
+*/
+uint8_t poll (query_t *arr_query, fsm_state_t* elevator_state)
+{
+    poll_cab_panel(g_cab_panel);
+    poll_floor_panel(g_floor_panel);
+    
+    for (int i = 0; i<M_FLOOR_COUNT;i++)
+    {
+        if (g_cab_panel[i])
+        {
+            populate_query (arr_query, elevator_state, i, 2);
+        }
+    }
+    for (int i= 0; i<6;i++){
+        if (i <3){
+            populate_query (arr_query, elevator_state, i, 0);
+        }
+        else{
+            populate_query(arr_query,elevator_state,i-3,1);
+        }
     }
     return 0;
 }
