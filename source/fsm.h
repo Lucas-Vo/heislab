@@ -22,9 +22,9 @@ typedef enum {
 
 // Different type events
 typedef enum {
+  FSM_EVENT_IDLE,
   FSM_EVENT_UP,
   FSM_EVENT_DOWN,
-  FSM_EVENT_IDLE,
   FSM_EVENT_HALT,
   FSM_EVENT_ATFLOOR,
 } fsm_event_t;

@@ -1,6 +1,7 @@
 {
   "files.associations": {
-    "global.h": "c"
+    "global.h": "c",
+    "elevio.h": "c"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "clang",
