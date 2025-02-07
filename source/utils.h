@@ -19,7 +19,7 @@ uint8_t update_elevator_floor(fsm_state_t *p_elevator_state);
 uint8_t update_elevator_state(fsm_state_t *p_elevator_state);
 
 uint8_t poll_floor_panel (bool *arr_floor_panel);
-uint8_t poll_elevator_panel (bool *arr_elevator_panel);
+uint8_t poll_cab_panel (bool *arr_elevator_panel);
 
 
 
