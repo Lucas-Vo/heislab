@@ -14,7 +14,7 @@ static stateFunctionRow_t stateFunction[] = {
 
 void exit_functions_fsm(fsm_state_t *p_state)
 {
-    if (p_state->transition = false) return;
+    if (p_state->transition != true) return;
     switch (p_state->event)
     {
     case FSM_EVENT_UP:
@@ -41,6 +41,8 @@ void exit_functions_fsm(fsm_state_t *p_state)
 
 void enter_functions_fsm(fsm_state_t *p_state)
 {
+    if(p_state->transition != true) return;
+    p_state->transition = false;
     switch (p_state->event)
     {
     case FSM_EVENT_UP:
@@ -65,6 +67,7 @@ void enter_functions_fsm(fsm_state_t *p_state)
 
 void update_functions_fsm(fsm_state_t *p_state)
 {
+
     switch (p_state->event)
     {
     case FSM_EVENT_IDLE:
