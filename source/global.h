@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "fsm.h"
 
 #define M_QUERY_LEN  10
 

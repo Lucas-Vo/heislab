@@ -37,15 +37,6 @@ typedef struct fsm_state_s {
 } fsm_state_t;
 
 
-typedef struct stateFunctionRow_s {
-  const char *name;
-  void (*enter_function)(void);
-  void (*update_function)(void); /// continuously while in this state
-  void (*exit_function)(void);
-} stateFunctionRow_t;
-
-
-
 // Enter functions
 void BootEnter(fsm_state_t *p_state);
 void IdleEnter(fsm_state_t *p_state);

@@ -181,8 +181,8 @@ uint8_t update_elevator_floor(fsm_state_t *p_elevator_state){
     return 0;
 }
 
-
-uint8_t populate_floor_panel (int *arr_floor_panel)
+/* ATTENZIONE */
+uint8_t populate_floor_panel (bool *arr_floor_panel)
 {
     for (int i=0; i<3; i++)
     {

@@ -1,16 +1,7 @@
 #include "fsm.h"
-#include "elevio.h"
+#include "driver/elevio.h"
 #include <time.h>
 
-/// @warning    This has to stay in sync with the fsm_state_t enum!
-static stateFunctionRow_t stateFunction[] = {
-  {"Idle",      &IdleEnter,      &IdleUpdate,    &IdleExit   },
-  {"AtFloor",   &AtFloorEnter,   &AtFloorUpdate, &AtFloorExit},
-  {"Up",        &UpEnter,        &UpUpdate,      &UpExit     },
-  {"Down",      &DownEnter,      &DownUpdate,    &DownExit   },
-  {"Halt",     &HaltEnter,      &HaltUpdate,    &HaltExit    },
-
-};
 
 void exit_functions_fsm(fsm_state_t *p_state)
 {
