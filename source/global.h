@@ -15,7 +15,7 @@
 #define M_BUTTON_COUNT 4
 #define M_FLOOR_COUNT 4
 
-typedef uint8_t query_t; // 1 bit for active, 1 bit for priority, 3 bits for floor, 3 bits for direction
+typedef uint8_t query_t; // 1 bit for active, 1 bit for priority, 3 bits for direction, 3 bits for floor
 
 extern bool g_floor_panel[6]; /// [4 down, 3 down, 2 down, 3 up, 2 up, 1 up]
 extern bool g_elevator_panel[4]; /// [1, 2, 3, 4]
