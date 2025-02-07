@@ -34,11 +34,12 @@ typedef struct fsm_state_s {
   fsm_floor_t floor;
   fsm_event_t event;
   bool transition;
+  uint64_t timer;
 } fsm_state_t;
 
 
 // Enter functions
-void BootEnter(fsm_state_t *p_state);
+
 void IdleEnter(fsm_state_t *p_state);
 void AtFloorEnter(fsm_state_t *p_state);
 void UpEnter(fsm_state_t *p_state);
@@ -59,6 +60,6 @@ void UpExit(fsm_state_t *p_state);
 void DownExit(fsm_state_t *p_state);
 void HaltExit(fsm_state_t *p_state);
 
-
+void service_all_lights(fsm_state_t *p_state);
 
 #endif

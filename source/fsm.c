@@ -10,11 +10,9 @@ void exit_functions_fsm(fsm_state_t *p_state)
     switch (p_state->event)
     {
     case FSM_EVENT_UP:
-        p_state->floor += 1; // + 0.5
         UpExit(p_state);
         break;
     case FSM_EVENT_DOWN:
-        p_state->floor -= 1; // - 0.5
         DownExit(p_state);
         break;
     case FSM_EVENT_IDLE:
@@ -98,25 +96,31 @@ void init_fsm(fsm_state_t *p_state)
     }
     p_state->event = FSM_EVENT_IDLE;
     p_state->floor = FSM_FLOOR_1;
+    p_state->timer = 0;
 }
 
 void run_fsm(fsm_state_t *p_state)
 {
     while (1) {
-        service_all_lights(p_state);
+        poll(g_query,p_state); // polls all buttons
+        service_all_lights(p_state); 
         exit_functions_fsm(p_state);
         enter_functions_fsm(p_state);
         update_functions_fsm(p_state);
+        events_fsm(p_state);
     }
 }
 
 
 void service_all_lights(fsm_state_t *p_state)
 {
+    // service the 4 lights to the right
     if ((int)(p_state->floor)%2 == 0)
     {
         elevio_floorIndicator((int)((p_state->floor))/2);
     }
+
+    // service the stop button
     if (p_state->event == FSM_EVENT_HALT)
     {
         elevio_stopLamp(1);
@@ -125,22 +129,26 @@ void service_all_lights(fsm_state_t *p_state)
     {
         elevio_stopLamp(0);
     }
+
+    // handles the 6 on top and the 4 in front
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
+        // check if active
         if (!(g_query[i]&M_ACTIVE_BIT_MASK)) return; 
+
         uint8_t current_floor = g_query[i] & M_FLOOR_BIT_MASK>>1;
         uint8_t button = g_query[i] & M_BUTTON_TYPE_BIT_MASK;
         uint8_t direction = g_query[i]&M_DIRECTION_BIT_MASK>>3;
         if ((button == 0) && (direction == FSM_EVENT_UP))
-        {
+        {//up
             button = 0;
         }
         else if ((button == 0) && (direction == FSM_EVENT_DOWN))
-        {
+        {//down
             button = 1;
         }
         else
-        {
+        {//front panel
             button = 2;
         }
 
@@ -150,29 +158,38 @@ void service_all_lights(fsm_state_t *p_state)
 
 
 // Enter functions
-void BootEnter(fsm_state_t *p_state)
-{
 
-}
 void IdleEnter(fsm_state_t *p_state)
 {
-
+    elevio_motorDirection(DIRN_STOP);
 }
 void AtFloorEnter(fsm_state_t *p_state)
 {
-    
+    elevio_motorDirection(DIRN_STOP);
+    p_state->floor == elevio_floorSensor() << 1;
+    p_state->timer = clock();
 }
 void UpEnter(fsm_state_t *p_state)
 {
-
+    p_state->floor += 1; // + 0.5
+    elevio_motorDirection(DIRN_UP);
 }
 
 void DownEnter(fsm_state_t *p_state)
 {
-
+    p_state->floor -= 1; // - 0.5
+    elevio_motorDirection(DIRN_DOWN);
 }
 void HaltEnter(fsm_state_t *p_state)
 {
+    //turn on light
+    elevio_stopLamp(1);
+    //clear query
+    clear_query (g_query);
+    // stop moving
+    elevio_motorDirection(DIRN_STOP);
+
+    p_state ->timer = clock();
 
 }
 
@@ -181,26 +198,92 @@ void IdleUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
+    sort_query (g_query, p_state);
+    // if query[0].active = not empty, transition to up or down
+    if((int)(g_query[0] & M_ACTIVE_BIT_MASK) != 0){
+        p_state->transition = true;
+        if((int)(g_query[0] & M_DIRECTION_BIT_MASK>>3) == 1){
+            p_state->event = FSM_EVENT_UP;
+        } else if ((int)(g_query[0] & M_DIRECTION_BIT_MASK>>3) == 2){
+            p_state->event = FSM_EVENT_DOWN;
+        }
+    }
+
+    // halt
+
+
+
 }
+
 void UpUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
+    sort_query (g_query, p_state);
+    // if query[0].floor = floor, go to atfloor
+    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
+    {
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_ATFLOOR;
+        
+    }
+
+    if(elevio_stopButton()){
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_HALT;
+    }
 }
+
 void DownUpdate(fsm_state_t *p_state)
 {
     //logic
     //transition conditions
+    sort_query (g_query, p_state);
+    // if query[0].floor = floor, go to atfloor
+    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
+    {
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_ATFLOOR;
+        elevio_motorDirection(DIRN_STOP);
+    }
+
+    if(elevio_stopButton()){
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_HALT;
+    }
 }
 void HaltUpdate(fsm_state_t *p_state)
 {
-    //logic
-    //transition conditions
+    sort_query (g_query, p_state);
+
+    //if on floor, open door in 3 sec
+    if((int)(p_state->floor)%2 == 0)
+    {
+        ; /* ATTENZIONE FIX THIS LATER */
+    }
+    // transition to idle after 3 seconds
+    if ((double)(p_state->timer-clock())/ CLOCKS_PER_SEC * 1.0>3.0){
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_IDLE;
+    }
+
 }
 
 void AtFloorUpdate(fsm_state_t *p_state)
 {
-    //obstruction type 
+    //logic
+    //transition conditions
+    sort_query (g_query, p_state);
+
+    // check if query is empty, if so, transition to idle
+    if((int)(g_query[0] & M_ACTIVE_BIT_MASK) == 0){
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_IDLE;
+    }
+    if ((double)(p_state->timer-clock())/ CLOCKS_PER_SEC * 1.0>3.0){
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_IDLE;
+    }
 }
 
 void IdleExit(fsm_state_t *p_state)
@@ -209,17 +292,19 @@ void IdleExit(fsm_state_t *p_state)
 }
 void AtFloorExit(fsm_state_t *p_state)
 {
+    p_state ->timer = 0;
     // turn off floor panel light and cab panel
 }
 void UpExit(fsm_state_t *p_state)
 {
-
+    elevio_motorDirection(DIRN_STOP);
 }
 void DownExit(fsm_state_t *p_state)
 {
-
+    elevio_motorDirection(DIRN_STOP);
 }
 void HaltExit(fsm_state_t *p_state)
 {
-
+    p_state ->timer = 0;
+    elevio_stopLamp(0);
 }
