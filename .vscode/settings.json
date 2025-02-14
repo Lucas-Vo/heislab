@@ -2,7 +2,9 @@
   "files.associations": {
     "global.h": "c",
     "elevio.h": "c",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "con_load.h": "c",
+    "fsm.h": "c"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "clang",

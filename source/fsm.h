@@ -33,6 +33,7 @@ typedef enum {
 typedef struct fsm_state_s {
   fsm_floor_t floor;
   fsm_event_t event;
+  fsm_event_t previous_event;
   bool transition;
   uint64_t timer;
 } fsm_state_t;

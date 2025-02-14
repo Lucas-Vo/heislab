@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include "global.h"
 
 
 /*
@@ -66,6 +66,50 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 @param floor: the floor of the new query
 @param button: the button of the new query
 */
+
+uint8_t populate_query(query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button)
+{
+    query_t new_query_element = 0;
+    uint8_t direction;
+
+    // Special check: If the elevator is below the requested floor, always prioritize going up
+    if (elevator_state->floor < floor) {
+        direction = 1; // Move up
+    }
+    else if (elevator_state->floor > floor) {
+        // If the elevator is above the requested floor, move down if the button is down
+        if (button == BUTTON_HALL_DOWN || button == BUTTON_CAB) {
+            direction = 2; // Move down
+        }
+        else {
+            direction = 1; // If button is for up, move up (handle edge cases)
+        }
+    }
+    else {
+        // If the elevator is on the requested floor, use the button's requested direction
+        direction = (int)button + 1;  // Button '0' means up, '1' means down
+    }
+
+    // Set the new query element with the direction, floor, and active bit
+    new_query_element |= M_ACTIVE_BIT_MASK;
+    new_query_element |= floor << 1;
+    new_query_element |= (direction << 3);
+
+    // Check if query already contains the same element, if so return
+    for (uint8_t i = 0; i < M_QUERY_LEN; i++) {
+        if (query[i] == new_query_element) {
+            return 0;
+        }
+        else if ((query[i] & M_ACTIVE_BIT_MASK) == 0) {
+            query[i] = new_query_element;
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+/*
 uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button){
     query_t new_query_element=0;
     uint8_t direction;
@@ -99,7 +143,7 @@ uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t fl
     }
     return 0;
 }
-
+*/
 /*
 @brief Throws the first element of the query array, and moves the others one step down
 @param query: pointer to the query array
@@ -200,10 +244,10 @@ uint8_t poll (query_t *arr_query, fsm_state_t* elevator_state)
         }
     }
     for (int i= 0; i<6;i++){
-        if (i <3){
+        if (i<3 && g_floor_panel[i]){
             populate_query (arr_query, elevator_state, i, 0);
         }
-        else{
+        else if(g_floor_panel[i]){
             populate_query(arr_query,elevator_state,i-3,1);
         }
     }
