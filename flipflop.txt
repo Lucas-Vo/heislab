@@ -1,0 +1,30 @@
+void AtFloorEnter(fsm_state_t *p_state)
+{
+    elevio_motorDirection(DIRN_STOP);
+    if (elevio_floorSensor() != -1) {
+        p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
+        p_state->timer = clock();
+    } else if (elevio_floorSensor() == -1)
+    {
+        // wiggle until floor detected
+        bool flip = false;
+        bool* p_flip = &flip;
+        uint32_t counter = 1;
+        while(elevio_floorSensor() == -1) 
+        {
+            if (flip){
+                elevio_motorDirection(DIRN_UP);
+
+            } else {
+                elevio_motorDirection(DIRN_DOWN);
+            }
+            nanosleep(&(struct timespec){0, counter*10*1000*1000}, NULL);
+            
+            counter ++;
+            flop(p_flip);
+        }
+        elevio_motorDirection(DIRN_STOP);
+        p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
+        p_state->timer = clock();
+    }
+}

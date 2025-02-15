@@ -3,6 +3,9 @@
 #include <time.h>
 #include "utils.h"
 
+void flop(bool* flip){
+    *flip = !(*flip);
+}
 
 void exit_functions_fsm(fsm_state_t *p_state)
 {
@@ -58,6 +61,12 @@ void enter_functions_fsm(fsm_state_t *p_state)
 
 void update_functions_fsm(fsm_state_t *p_state)
 {
+    // clean up
+    if (g_query[M_QUERY_LEN-1] != 0){
+        clear_query(g_query);
+    }
+    // remove duplicates
+    
 
     switch (p_state->event)
     {
@@ -125,10 +134,12 @@ void run_fsm(fsm_state_t *p_state)
         exit_functions_fsm(p_state);
         enter_functions_fsm(p_state);
         update_functions_fsm(p_state);
+        // int a = elevio_callButton(3,BUTTON_HALL_DOWN);
+        // printf("%d", a);
     }
 }
 
-
+// press 3 heispanel og 2-up
 void service_all_lights(fsm_state_t *p_state)
 {
     // service the 4 lights to the right
@@ -148,13 +159,19 @@ void service_all_lights(fsm_state_t *p_state)
     }
 
     // handles 6 on top based on g_floor_panel
-    elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[0]);
-    elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[1]);
-    elevio_buttonLamp(1, BUTTON_HALL_DOWN, (int)g_floor_panel[2]);
-    elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[3]);
-    elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[4]);
-    elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[5]);
+    elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[0]);
+    elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[1]);
+    elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[2]);
+    elevio_buttonLamp(1, BUTTON_HALL_DOWN, (int)g_floor_panel[3]);
+    elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[4]);
+    elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[5]);
 
+    elevio_buttonLamp(0, BUTTON_CAB, (int)g_cab_panel[0]);
+    elevio_buttonLamp(1, BUTTON_CAB, (int)g_cab_panel[1]);
+    elevio_buttonLamp(2, BUTTON_CAB, (int)g_cab_panel[2]);
+    elevio_buttonLamp(3, BUTTON_CAB, (int)g_cab_panel[3]);
+    
+    
     // handles the 6 on top and the 4 in front
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
@@ -163,20 +180,21 @@ void service_all_lights(fsm_state_t *p_state)
 
         uint8_t current_floor = (g_query[i] & M_FLOOR_BIT_MASK)>>1;
         uint8_t button = (g_query[i] & M_BUTTON_TYPE_BIT_MASK)>>5;
+        ButtonType buttontype;
         uint8_t direction = (g_query[i]&M_DIRECTION_BIT_MASK)>>3;
         if ((button == 0) && (direction == FSM_EVENT_UP))
         {//up
-            button = 0;
+            buttontype = BUTTON_HALL_UP;
         }
         else if ((button == 0) && (direction == FSM_EVENT_DOWN))
         {//down
-            button = 1;
+            buttontype = BUTTON_HALL_DOWN;
         }
-        else
+        else if ((button == 1))
         {//front panel
-            button = 2;
+            buttontype = BUTTON_CAB;
         }
-        elevio_buttonLamp(current_floor, (ButtonType) button, 1);
+        elevio_buttonLamp(current_floor, buttontype, 1);
     }
 
 }
@@ -191,8 +209,32 @@ void IdleEnter(fsm_state_t *p_state)
 void AtFloorEnter(fsm_state_t *p_state)
 {
     elevio_motorDirection(DIRN_STOP);
-    p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
-    p_state->timer = clock();
+    if (elevio_floorSensor() != -1) {
+        p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
+        p_state->timer = clock();
+    } else if (elevio_floorSensor() == -1)
+    {
+        // wiggle until floor detected
+        bool flip = false;
+        bool* p_flip = &flip;
+        uint32_t counter = 1;
+        while(elevio_floorSensor() == -1) 
+        {
+            if (flip){
+                elevio_motorDirection(DIRN_UP);
+
+            } else {
+                elevio_motorDirection(DIRN_DOWN);
+            }
+            nanosleep(&(struct timespec){0, counter*10*1000*1000}, NULL);
+            
+            counter ++;
+            flop(p_flip);
+        }
+        elevio_motorDirection(DIRN_STOP);
+        p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
+        p_state->timer = clock();
+    }
 }
 void UpEnter(fsm_state_t *p_state)
 {
@@ -227,10 +269,13 @@ void IdleUpdate(fsm_state_t *p_state)
     // if query[0].active = not empty, transition to up or down
     if((int)(g_query[0] & M_ACTIVE_BIT_MASK) != 0){
         p_state->transition = true;
-        if((int)((g_query[0] & M_DIRECTION_BIT_MASK)>>3) == 1){
+        if(p_state->floor < (g_query[0] & M_FLOOR_BIT_MASK)){
             p_state->event = FSM_EVENT_UP;
-        } else if ((int)((g_query[0] & M_DIRECTION_BIT_MASK)>>3) == 2){
+        } else if (p_state->floor > (g_query[0] & M_FLOOR_BIT_MASK)){
             p_state->event = FSM_EVENT_DOWN;
+        }
+        else if (p_state->floor == (g_query[0] & M_FLOOR_BIT_MASK)){
+            iterate_query(g_query);
         }
     }
 
@@ -245,6 +290,12 @@ void UpUpdate(fsm_state_t *p_state)
     //logic
     //transition conditions
     sort_query (g_query, p_state);
+    if (elevio_floorSensor() != -1){
+        p_state -> floor = elevio_floorSensor()<<1;
+    }
+    else if ( (p_state->floor %2 == 0) && (elevio_floorSensor()==-1)){
+        p_state->floor++;
+    }
     // if query[0].floor = floor, go to atfloor
     if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
     {
@@ -254,15 +305,7 @@ void UpUpdate(fsm_state_t *p_state)
         p_state->event = FSM_EVENT_ATFLOOR;
         
 
-    } // if query[0].floor < floor, go to atfloor
-    else if ((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 ) < elevio_floorSensor())
-    {
-        iterate_query(g_query);
-        elevio_motorDirection(DIRN_STOP);
-        p_state->transition = true;
-        p_state->event = FSM_EVENT_ATFLOOR;
-    }
-
+    } 
     if(elevio_stopButton()){
         iterate_query(g_query);
         elevio_motorDirection(DIRN_STOP);
@@ -276,6 +319,12 @@ void DownUpdate(fsm_state_t *p_state)
     //logic
     //transition conditions
     sort_query (g_query, p_state);
+    if (elevio_floorSensor() != -1){
+        p_state -> floor = elevio_floorSensor()<<1;
+    }
+    else if ( (p_state->floor %2 ==0) && (elevio_floorSensor()==-1)){
+        p_state->floor--;
+    }
     // if query[0].floor = floor, go to atfloor
     if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
     {
