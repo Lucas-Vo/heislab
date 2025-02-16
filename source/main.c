@@ -8,16 +8,13 @@
 // TODO
 
 /*
-4th flor down button not working, might be hardware?
-pressing 3-up then 4, elevator goes down, it should go up
-pressing 3-down, elevator goes down, it should go up
+Missing obstruction function and also stop button hasnt been tested. 
 */
 
 int main(){
     elevio_init();
     
     fsm_state_t *state;
-
 
     init_fsm(state);
 

@@ -1,7 +1,4 @@
 #include "fsm.h"
-#include "driver/elevio.h"
-#include <time.h>
-#include "utils.h"
 
 void flop(bool* flip){
     *flip = !(*flip);
@@ -142,7 +139,7 @@ void run_fsm(fsm_state_t *p_state)
 // press 3 heispanel og 2-up
 void service_all_lights(fsm_state_t *p_state)
 {
-    // service the 4 lights to the right
+    // service the 4 floor lights to the right
     if ((int)(p_state->floor)%2 == 0 && (p_state->floor >=(0)))
     {
         elevio_floorIndicator((int)((p_state->floor))/2);
@@ -158,7 +155,7 @@ void service_all_lights(fsm_state_t *p_state)
         elevio_stopLamp(0);
     }
 
-    // handles 6 on top based on g_floor_panel
+    // handles the 6 lights on the top panel based on g_floor_panel
     elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[0]);
     elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[1]);
     elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[2]);
@@ -166,11 +163,14 @@ void service_all_lights(fsm_state_t *p_state)
     elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[4]);
     elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[5]);
 
+    // handles the 4 lights on the cab panel based on g_cab_panel
     elevio_buttonLamp(0, BUTTON_CAB, (int)g_cab_panel[0]);
     elevio_buttonLamp(1, BUTTON_CAB, (int)g_cab_panel[1]);
     elevio_buttonLamp(2, BUTTON_CAB, (int)g_cab_panel[2]);
     elevio_buttonLamp(3, BUTTON_CAB, (int)g_cab_panel[3]);
     
+    // handles the stop lamp if button is being pressed
+    elevio_stopLamp(elevio_stopButton());
     
     // handles the 6 on top and the 4 in front
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
@@ -348,6 +348,8 @@ void HaltUpdate(fsm_state_t *p_state)
     //if on floor, open door in 3 sec
     if((int)(p_state->floor)%2 == 0)
     {
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_ATFLOOR;
         ; /* ATTENZIONE FIX THIS LATER */
     }
     // transition to idle after 3 seconds

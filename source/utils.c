@@ -8,7 +8,7 @@
 */
 uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
-    prioritize_inputs (arr_query, p_elevator_state);
+    prioritize_query_elements (arr_query, p_elevator_state);
     if (p_elevator_state->event == FSM_EVENT_IDLE)
     {
         //checks if the elevator is idle
@@ -180,7 +180,7 @@ uint8_t clear_query ( query_t *query){
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
-uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
+uint8_t prioritize_query_elements ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
     //checks if the elevator is idle
     if (p_elevator_state->event == FSM_EVENT_IDLE && ((arr_query[0] & M_ACTIVE_BIT_MASK) != 0))
