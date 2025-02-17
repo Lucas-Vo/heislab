@@ -1,4 +1,7 @@
 #include "fsm.h"
+#include "driver/elevio.h"
+#include <time.h>
+#include "utils.h"
 
 void flop(bool* flip){
     *flip = !(*flip);
@@ -190,8 +193,8 @@ void service_all_lights(fsm_state_t *p_state)
         {//down
             buttontype = BUTTON_HALL_DOWN;
         }
-        else if ((button == 1))
-        {//front panel
+        else
+        {//cab panel
             buttontype = BUTTON_CAB;
         }
         elevio_buttonLamp(current_floor, buttontype, 1);

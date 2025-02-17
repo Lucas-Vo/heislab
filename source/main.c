@@ -9,6 +9,8 @@
 
 /*
 Missing obstruction function and also stop button hasnt been tested. 
+
+Lights flashing due to turning constantly on and off
 */
 
 int main(){

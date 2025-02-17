@@ -4,9 +4,7 @@
 #include <stdbool.h> // booleans
 #include <stdint.h>  // xintx_t types
 #include <stdio.h>   // sprintf
-#include "driver/elevio.h"
-#include <time.h>
-#include "utils.h"
+
 
 // Different state of ATM machine
 /// @warning This has to reflect the order of the stateFunctionRow_t array
