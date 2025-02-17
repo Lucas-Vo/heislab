@@ -8,7 +8,7 @@
 */
 uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
-    prioritize_inputs (arr_query, p_elevator_state);
+    prioritize_query_elements (arr_query, p_elevator_state);
     if (p_elevator_state->event == FSM_EVENT_IDLE)
     {
         //checks if the elevator is idle
@@ -73,13 +73,13 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 uint8_t populate_query(query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button)
 {
     query_t new_query_element = 0;
-    uint8_t direction;
+    uint8_t direction = 0;
 
     if (button != BUTTON_CAB)
     {
         direction = (int) button + 1;
     }
-    else if (button == BUTTON_CAB)
+    else
     {
         if (elevator_state->floor < (floor<<1)) {
             direction = 1; // Move up
@@ -88,7 +88,7 @@ uint8_t populate_query(query_t *query, fsm_state_t *elevator_state, uint8_t floo
             // If the elevator is above the requested floor, move down if the button is down
             direction = 2; // Move down
         }
-        else if (elevator_state->floor == (floor<<1)){
+        else {
             // If the elevator is on the requested floor, use the button's requested direction
             direction = 0;  // Button '0' means up, '1' means down
         }
@@ -180,7 +180,7 @@ uint8_t clear_query ( query_t *query){
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
 @param query: pointer to the query array
 */
-uint8_t prioritize_inputs ( query_t *arr_query, fsm_state_t *p_elevator_state)
+uint8_t prioritize_query_elements ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
     //checks if the elevator is idle
     if (p_elevator_state->event == FSM_EVENT_IDLE && ((arr_query[0] & M_ACTIVE_BIT_MASK) != 0))
@@ -240,7 +240,7 @@ uint8_t poll_cab_panel(bool *arr_elevator_panel)
 @brief polls the entire panel for inputs
 @param 
 */
-uint8_t poll (query_t *arr_query, fsm_state_t* elevator_state)
+void poll (query_t *arr_query, fsm_state_t* elevator_state)
 {
     poll_cab_panel(g_cab_panel);
     poll_floor_panel(g_floor_panel);
@@ -260,6 +260,5 @@ uint8_t poll (query_t *arr_query, fsm_state_t* elevator_state)
             populate_query(arr_query,elevator_state,i-2,BUTTON_HALL_DOWN);
         }
     }
-    return 0;
 }
 

@@ -38,6 +38,9 @@ typedef struct fsm_state_s {
   uint64_t timer;
 } fsm_state_t;
 
+// General functions 
+void init_fsm(fsm_state_t *p_state);
+void run_fsm(fsm_state_t *p_state);
 
 // Enter functions
 
@@ -61,6 +64,7 @@ void UpExit(fsm_state_t *p_state);
 void DownExit(fsm_state_t *p_state);
 void HaltExit(fsm_state_t *p_state);
 
+// other functions
 void service_all_lights(fsm_state_t *p_state);
 
 #endif
