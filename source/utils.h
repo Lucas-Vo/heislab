@@ -6,6 +6,8 @@
 #include "global.h"
 #include "driver/elevio.h"
 
+#define CLOCK_CYCLES_PER_SECOND 10000
+
 
 // functions for handling query 
 uint8_t sort_query ( query_t *query, fsm_state_t *elevator_state);

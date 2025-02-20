@@ -36,6 +36,7 @@ typedef struct fsm_state_s {
   fsm_event_t previous_event;
   bool transition;
   uint64_t timer;
+  bool door_is_open;
 } fsm_state_t;
 
 // General functions 

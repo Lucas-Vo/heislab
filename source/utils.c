@@ -14,8 +14,8 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
         //checks if the elevator is idle
         return 0;
     }
-    query_t temp;
 
+    query_t temp;
     for (uint8_t j = 0; j < M_QUERY_LEN-1; j++)
     {
         for (uint8_t i = 0; i < M_QUERY_LEN-j-1; i++)
@@ -33,7 +33,7 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
                 arr_query[i+1] = temp;
                 continue;
             }
-            else 
+            else if (1)
             {
                 //If both queries are prioritized, it checks the floor and movement direction of current elevator
                 if (p_elevator_state->event ==  FSM_EVENT_UP)
@@ -57,6 +57,41 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
                     }
                 }
             }
+            // else if (1)
+            // {   
+            //     //Prioritizes according to current elevator direction
+            //     if ((p_elevator_state->event ==  FSM_EVENT_UP) && ((arr_query[i]&M_FLOOR_BIT_MASK) >p_elevator_state->floor))
+            //     {
+            //         //If the call is for going upwards
+            //         if ( ((arr_query[i]&M_DIRECTION_BIT_MASK)>>3) == 1 && ((arr_query[i+1]&M_DIRECTION_BIT_MASK)>>3) == 1)
+            //         {
+            //             if ((arr_query[i]&M_FLOOR_BIT_MASK) > (arr_query[i+1]&M_FLOOR_BIT_MASK))
+            //             {
+            //                 //Swaps the two queries if the floor of arr_query[j] is higher than arr_query[j+1]
+            //                 temp = arr_query[i];
+            //                 arr_query[i] = arr_query[i+1];
+            //                 arr_query[i+1] = temp;
+            //             }
+            //         }
+            //         //If the call is for going down
+            //         else if ( ((arr_query[i]&M_DIRECTION_BIT_MASK)>>3) == 2)
+            //         {
+
+            //         }
+            //         //If the call is cab call
+            //         else 
+            //         {
+            //             if ((arr_query[i]&M_FLOOR_BIT_MASK) < (arr_query[i+1]&M_FLOOR_BIT_MASK))
+            //             {
+
+            //             }
+            //         }
+            //     }
+            //     else if ((p_elevator_state->event ==  FSM_EVENT_DOWN) && ((arr_query[i]&M_FLOOR_BIT_MASK) >p_elevator_state->floor))
+            //     {
+
+            //     }
+            // }
         }
     }
     return 0;
@@ -156,7 +191,24 @@ uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t fl
 @param query: pointer to the query array
 */
 uint8_t iterate_query (query_t *query)
-{
+{   
+    uint8_t current_floor = (g_query[0] & M_FLOOR_BIT_MASK)>>1;
+    uint8_t button = (g_query[0] & M_BUTTON_TYPE_BIT_MASK)>>5;
+    ButtonType buttontype;
+    uint8_t direction = (g_query[0]&M_DIRECTION_BIT_MASK)>>3;
+    if ((button == 0) && (direction == FSM_EVENT_UP))
+    {//up
+        buttontype = BUTTON_HALL_UP;
+    }
+    else if ((button == 0) && (direction == FSM_EVENT_DOWN))
+    {//down
+        buttontype = BUTTON_HALL_DOWN;
+    }
+    else
+    {//cab panel
+        buttontype = BUTTON_CAB;
+    }
+    elevio_buttonLamp(current_floor, buttontype, 0);
     for (uint8_t i = 0; i < M_QUERY_LEN-1; i++)
     {
         query[i] = query[i+1];

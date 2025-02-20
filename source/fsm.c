@@ -95,9 +95,11 @@ void update_functions_fsm(fsm_state_t *p_state)
 
 void init_fsm(fsm_state_t *p_state)
 {
-
+    // close the door
+    elevio_doorOpenLamp(0);
     // turns off 4th floor down light
     elevio_buttonLamp(3, BUTTON_HALL_DOWN, 0);
+
 
     clear_query(g_query);
     elevio_floorIndicator(0);
@@ -123,6 +125,7 @@ void init_fsm(fsm_state_t *p_state)
     p_state->previous_event = FSM_EVENT_IDLE;
     p_state->floor = FSM_FLOOR_1;
     p_state->timer = 0;
+    p_state->door_is_open = false;
     
 }
 
@@ -149,28 +152,28 @@ void service_all_lights(fsm_state_t *p_state)
     }
 
     // service the stop button
-    if (p_state->event == FSM_EVENT_HALT)
+    if (p_state->event == FSM_EVENT_HALT && elevio_stopButton())
     {
         elevio_stopLamp(1);
     }
-    else
+    else if (p_state->event != FSM_EVENT_HALT)
     {
         elevio_stopLamp(0);
     }
 
     // handles the 6 lights on the top panel based on g_floor_panel
-    elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[0]);
-    elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[1]);
-    elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[2]);
-    elevio_buttonLamp(1, BUTTON_HALL_DOWN, (int)g_floor_panel[3]);
-    elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[4]);
-    elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[5]);
+    // elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[0]);
+    // elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[1]);
+    // elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[2]);
+    // elevio_buttonLamp(1, BUTTON_HALL_DOWN, (int)g_floor_panel[3]);
+    // elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[4]);
+    // elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[5]);
 
-    // handles the 4 lights on the cab panel based on g_cab_panel
-    elevio_buttonLamp(0, BUTTON_CAB, (int)g_cab_panel[0]);
-    elevio_buttonLamp(1, BUTTON_CAB, (int)g_cab_panel[1]);
-    elevio_buttonLamp(2, BUTTON_CAB, (int)g_cab_panel[2]);
-    elevio_buttonLamp(3, BUTTON_CAB, (int)g_cab_panel[3]);
+    // // handles the 4 lights on the cab panel based on g_cab_panel
+    // elevio_buttonLamp(0, BUTTON_CAB, (int)g_cab_panel[0]);
+    // elevio_buttonLamp(1, BUTTON_CAB, (int)g_cab_panel[1]);
+    // elevio_buttonLamp(2, BUTTON_CAB, (int)g_cab_panel[2]);
+    // elevio_buttonLamp(3, BUTTON_CAB, (int)g_cab_panel[3]);
     
     // handles the stop lamp if button is being pressed
     elevio_stopLamp(elevio_stopButton());
@@ -212,6 +215,9 @@ void IdleEnter(fsm_state_t *p_state)
 void AtFloorEnter(fsm_state_t *p_state)
 {
     elevio_motorDirection(DIRN_STOP);
+    // open the door
+    elevio_doorOpenLamp(1); 
+    p_state->door_is_open = true;
     if (elevio_floorSensor() != -1) {
         p_state->floor = (fsm_floor_t) elevio_floorSensor() * 2;
         p_state->timer = clock();
@@ -252,14 +258,35 @@ void DownEnter(fsm_state_t *p_state)
 }
 void HaltEnter(fsm_state_t *p_state)
 {
+    
     //turn on light
     elevio_stopLamp(1);
+
+    // turn off all other lights
+    elevio_buttonLamp(0, BUTTON_HALL_UP, 0);
+    elevio_buttonLamp(1, BUTTON_HALL_UP, 0);
+    elevio_buttonLamp(2, BUTTON_HALL_UP, 0);
+    elevio_buttonLamp(1, BUTTON_HALL_DOWN, 0);
+    elevio_buttonLamp(2, BUTTON_HALL_DOWN, 0);
+    elevio_buttonLamp(3, BUTTON_HALL_DOWN, 0);
+    elevio_buttonLamp(0, BUTTON_CAB, 0);
+    elevio_buttonLamp(1, BUTTON_CAB, 0);
+    elevio_buttonLamp(2, BUTTON_CAB, 0);
+    elevio_buttonLamp(3, BUTTON_CAB, 0);
+
+
     //clear query
     clear_query (g_query);
     // stop moving
     elevio_motorDirection(DIRN_STOP);
 
     p_state ->timer = clock();
+
+    // open door if on a floor
+    if (p_state->floor %2 == 0)
+    {
+        elevio_doorOpenLamp(1);
+    }
 
 }
 
@@ -283,9 +310,14 @@ void IdleUpdate(fsm_state_t *p_state)
     }
 
     // halt
+    if(elevio_stopButton()){
+        iterate_query(g_query);
+        elevio_motorDirection(DIRN_STOP);
+        p_state->transition = true;
+        p_state->event = FSM_EVENT_HALT;
+    }
 
-
-
+    elevio_doorOpenLamp(0);
 }
 
 void UpUpdate(fsm_state_t *p_state)
@@ -300,7 +332,7 @@ void UpUpdate(fsm_state_t *p_state)
         p_state->floor++;
     }
     // if query[0].floor = floor, go to atfloor
-    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
+    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor() || elevio_floorSensor() == 3)
     {
         iterate_query(g_query);
         elevio_motorDirection(DIRN_STOP);
@@ -328,8 +360,9 @@ void DownUpdate(fsm_state_t *p_state)
     else if ( (p_state->floor %2 ==0) && (elevio_floorSensor()==-1)){
         p_state->floor--;
     }
+
     // if query[0].floor = floor, go to atfloor
-    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor())
+    if((int)( (g_query[0] & M_FLOOR_BIT_MASK)>>1 )== elevio_floorSensor() || elevio_floorSensor() == 0)
     {
         iterate_query(g_query);
         elevio_motorDirection(DIRN_STOP);
@@ -347,16 +380,16 @@ void DownUpdate(fsm_state_t *p_state)
 void HaltUpdate(fsm_state_t *p_state)
 {
     sort_query (g_query, p_state);
+    uint64_t current_time = (uint64_t)clock();
 
-    //if on floor, open door in 3 sec
-    if((int)(p_state->floor)%2 == 0)
+    if (elevio_stopButton())
     {
-        p_state->transition = true;
-        p_state->event = FSM_EVENT_ATFLOOR;
-        ; /* ATTENZIONE FIX THIS LATER */
+        p_state->timer = clock();
     }
-    // transition to idle after 3 seconds
-    if ((double)(p_state->timer-clock())/ CLOCKS_PER_SEC * 1.0>3.0){
+
+    // check if stop button isnt pressed for 3 seconds
+    if (!elevio_stopButton() && (current_time-(p_state ->timer) > 3*CLOCK_CYCLES_PER_SECOND))
+    {
         p_state->transition = true;
         p_state->event = FSM_EVENT_IDLE;
     }
@@ -369,15 +402,27 @@ void AtFloorUpdate(fsm_state_t *p_state)
     //transition conditions
     sort_query (g_query, p_state);
 
-    // check if query is empty, if so, transition to idle
-    if((int)(g_query[0] & M_ACTIVE_BIT_MASK) == 0){
+    // close the door after 3 seconds
+
+    uint64_t current_time = (uint64_t)clock();
+
+    if(current_time-(p_state ->timer) > 3*CLOCK_CYCLES_PER_SECOND && elevio_obstruction() == 0) {
+        elevio_doorOpenLamp(0);
+        p_state -> door_is_open = false;
+    } else if (elevio_obstruction()) {
+        p_state -> timer = clock();
+    } else if (elevio_stopButton()){
+        iterate_query(g_query);
+        elevio_motorDirection(DIRN_STOP);
         p_state->transition = true;
-        p_state->event = FSM_EVENT_IDLE;
+        p_state->event = FSM_EVENT_HALT;
     }
-    if ((double)(p_state->timer-clock())/ CLOCKS_PER_SEC * 1.0>3.0){
-        p_state->transition = true;
-        p_state->event = FSM_EVENT_IDLE;
-    }
+
+    if (p_state -> door_is_open) return;
+
+    // transition
+    p_state->transition = true;
+    p_state->event = FSM_EVENT_IDLE;
 }
 
 void IdleExit(fsm_state_t *p_state)
