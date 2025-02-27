@@ -4,7 +4,8 @@
 
 /*
 @brief Sorts the query array based on the priority bit, direction moving, and the floor bit
-@param query: pointer to the query array
+@param *arr_query: pointer to the query array
+@param *p_elevator_state: pointer to the elevator state struct
 */
 uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
@@ -57,41 +58,6 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
                     }
                 }
             }
-            // else if (1)
-            // {   
-            //     //Prioritizes according to current elevator direction
-            //     if ((p_elevator_state->event ==  FSM_EVENT_UP) && ((arr_query[i]&M_FLOOR_BIT_MASK) >p_elevator_state->floor))
-            //     {
-            //         //If the call is for going upwards
-            //         if ( ((arr_query[i]&M_DIRECTION_BIT_MASK)>>3) == 1 && ((arr_query[i+1]&M_DIRECTION_BIT_MASK)>>3) == 1)
-            //         {
-            //             if ((arr_query[i]&M_FLOOR_BIT_MASK) > (arr_query[i+1]&M_FLOOR_BIT_MASK))
-            //             {
-            //                 //Swaps the two queries if the floor of arr_query[j] is higher than arr_query[j+1]
-            //                 temp = arr_query[i];
-            //                 arr_query[i] = arr_query[i+1];
-            //                 arr_query[i+1] = temp;
-            //             }
-            //         }
-            //         //If the call is for going down
-            //         else if ( ((arr_query[i]&M_DIRECTION_BIT_MASK)>>3) == 2)
-            //         {
-
-            //         }
-            //         //If the call is cab call
-            //         else 
-            //         {
-            //             if ((arr_query[i]&M_FLOOR_BIT_MASK) < (arr_query[i+1]&M_FLOOR_BIT_MASK))
-            //             {
-
-            //             }
-            //         }
-            //     }
-            //     else if ((p_elevator_state->event ==  FSM_EVENT_DOWN) && ((arr_query[i]&M_FLOOR_BIT_MASK) >p_elevator_state->floor))
-            //     {
-
-            //     }
-            // }
         }
     }
     return 0;
@@ -99,33 +65,36 @@ uint8_t sort_query ( query_t *arr_query, fsm_state_t *p_elevator_state)
 
 /*
 @brief Populates the query with a new query element if it not already exists
-@param query: pointer to the query array
-@param elevator_state: pointer to the elevator state struct
+@param *arr_query: pointer to the query array
+@param *elevator_state: pointer to the elevator state struct
 @param floor: the floor of the new query
 @param button: the button of the new query
 */
 
-uint8_t populate_query(query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button)
+uint8_t populate_query(query_t *arr_query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button)
 {
     query_t new_query_element = 0;
     uint8_t direction = 0;
 
+    // if the button is on the top panel, the value of the direction bits in the queue value will be 01 for up and 10 for down
     if (button != BUTTON_CAB)
     {
         direction = (int) button + 1;
     }
+    // If the button is on the cab panel, the direction of the call will depend on the current floor of the elevator
     else
     {
         if (elevator_state->floor < (floor<<1)) {
+            // If the elevator is below the requested floor, move up
             direction = 1; // Move up
         }
         else if (elevator_state->floor > (floor<<1)) {
-            // If the elevator is above the requested floor, move down if the button is down
+            // If the elevator is above the requested floor, move down
             direction = 2; // Move down
         }
         else {
             // If the elevator is on the requested floor, use the button's requested direction
-            direction = 0;  // Button '0' means up, '1' means down
+            direction = 0;
         }
     }
     
@@ -133,64 +102,35 @@ uint8_t populate_query(query_t *query, fsm_state_t *elevator_state, uint8_t floo
     new_query_element |= M_ACTIVE_BIT_MASK;
     new_query_element |= (floor << 1);
     new_query_element |= (direction << 3);
-    if (button == BUTTON_CAB){
+    //Sets the button type bit on the elevator code call
+    if (button == BUTTON_CAB)
+    {
         new_query_element |= 0b00100000;
     }
    
 
     // Check if query already contains the same element, if so return
-    for (uint8_t i = 0; i < M_QUERY_LEN; i++) {
-        if ((query[i]&0b10111111) == (new_query_element&0b10111111)) {
-            return 0;
-        }
-        else if ((query[i] & M_ACTIVE_BIT_MASK) == 0) {
-            query[i] = new_query_element;
-            return 0;
-        }
-    }
-    return 0;
-}
-
-/*
-uint8_t populate_query ( query_t *query, fsm_state_t *elevator_state, uint8_t floor, ButtonType button){
-    query_t new_query_element=0;
-    uint8_t direction;
-
-    if ( (floor > elevator_state->floor) && ((int)button == 2) ) 
-    { // for cab panels
-        direction = 1;
-    }
-    else if ( (floor<elevator_state->floor) && ((int)button == 2) )
-    {
-        direction = 2;
-    }
-    else{ //for floor panel
-        direction = (int) button +1; 
-    }
-
-    new_query_element |= M_ACTIVE_BIT_MASK;
-    new_query_element |= floor<<1;
-    new_query_element |= (direction<<3);
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
-        if (query[i]==new_query_element)
+        if ((arr_query[i]&0b10111111) == (new_query_element&0b10111111))
         {
             return 0;
         }
-        else if ((query[i]&M_ACTIVE_BIT_MASK) == 0)
+        else if ((arr_query[i] & M_ACTIVE_BIT_MASK) == 0)
         {
-            query[i] = new_query_element;
+            arr_query[i] = new_query_element;
             return 0;
         }
     }
     return 0;
 }
-*/
+
+
 /*
 @brief Throws the first element of the query array, and moves the others one step down
-@param query: pointer to the query array
+@param arr_query: pointer to the query array
 */
-uint8_t iterate_query (query_t *query)
+uint8_t iterate_query (query_t *arr_query)
 {   
     uint8_t current_floor = (g_query[0] & M_FLOOR_BIT_MASK)>>1;
     uint8_t button = (g_query[0] & M_BUTTON_TYPE_BIT_MASK)>>5;
@@ -211,26 +151,28 @@ uint8_t iterate_query (query_t *query)
     elevio_buttonLamp(current_floor, buttontype, 0);
     for (uint8_t i = 0; i < M_QUERY_LEN-1; i++)
     {
-        query[i] = query[i+1];
+        arr_query[i] = arr_query[i+1];
     }
     return 0;
 }
 
 /*
 @brief Clears the query array
-@param query: pointer to the query array
+@param arr_query: pointer to the query array
 */
-uint8_t clear_query ( query_t *query){
+uint8_t clear_query ( query_t *arr_query)
+{
     for (uint8_t i = 0; i < M_QUERY_LEN; i++)
     {
-        query[i] = 0;
+        arr_query[i] = 0;
     }
     return 0;
 }
 
 /*
 @brief Prioritizes the inputs based on the priority bit, direction moving, and the floor bit
-@param query: pointer to the query array
+@param arr_query: pointer to the query array
+@param *p_elevator_state: pointer to the elevator state struct
 */
 uint8_t prioritize_query_elements ( query_t *arr_query, fsm_state_t *p_elevator_state)
 {
@@ -266,7 +208,10 @@ uint8_t prioritize_query_elements ( query_t *arr_query, fsm_state_t *p_elevator_
 }
 
 
-/* ATTENZIONE */
+/*
+@brief Polls info from the panel and populates the arr_floor_panel with current status of panel buttons pressed
+@param arr_floor_panel: pointer to array of floor panel inputs
+*/
 uint8_t poll_floor_panel (bool *arr_floor_panel) //[1 up, 2 up, 3 up, 2 down, 3 down, 4 down]
 {
     for (int i=0; i<3; i++)
@@ -279,6 +224,10 @@ uint8_t poll_floor_panel (bool *arr_floor_panel) //[1 up, 2 up, 3 up, 2 down, 3 
     return 0;
 }
 
+/*
+@brief Polls info from the front panel and populates the arr_elevator_panel with current status of panel buttons pressed
+@param arr_elevator_panel: pointer to array of cab panel inputs
+*/
 uint8_t poll_cab_panel(bool *arr_elevator_panel)
 {
     for(int i = 0; i < M_FLOOR_COUNT; i++)
@@ -289,8 +238,9 @@ uint8_t poll_cab_panel(bool *arr_elevator_panel)
 }
 
 /*
-@brief polls the entire panel for inputs
-@param 
+@brief polls both panels for inputs, and populates the query with the given inputs.
+@param arr_query: pointer to the query array
+@param elevator_state: pointer to the elevator state struct
 */
 void poll (query_t *arr_query, fsm_state_t* elevator_state)
 {

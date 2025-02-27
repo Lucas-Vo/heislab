@@ -160,20 +160,6 @@ void service_all_lights(fsm_state_t *p_state)
     {
         elevio_stopLamp(0);
     }
-
-    // handles the 6 lights on the top panel based on g_floor_panel
-    // elevio_buttonLamp(0, BUTTON_HALL_UP, (int)g_floor_panel[0]);
-    // elevio_buttonLamp(1, BUTTON_HALL_UP, (int)g_floor_panel[1]);
-    // elevio_buttonLamp(2, BUTTON_HALL_UP, (int)g_floor_panel[2]);
-    // elevio_buttonLamp(1, BUTTON_HALL_DOWN, (int)g_floor_panel[3]);
-    // elevio_buttonLamp(2, BUTTON_HALL_DOWN, (int)g_floor_panel[4]);
-    // elevio_buttonLamp(3, BUTTON_HALL_DOWN, (int)g_floor_panel[5]);
-
-    // // handles the 4 lights on the cab panel based on g_cab_panel
-    // elevio_buttonLamp(0, BUTTON_CAB, (int)g_cab_panel[0]);
-    // elevio_buttonLamp(1, BUTTON_CAB, (int)g_cab_panel[1]);
-    // elevio_buttonLamp(2, BUTTON_CAB, (int)g_cab_panel[2]);
-    // elevio_buttonLamp(3, BUTTON_CAB, (int)g_cab_panel[3]);
     
     // handles the stop lamp if button is being pressed
     elevio_stopLamp(elevio_stopButton());
